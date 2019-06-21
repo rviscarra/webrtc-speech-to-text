@@ -37,6 +37,8 @@ Allows to speficy a different [STUN](https://es.wikipedia.org/wiki/STUN) server,
 
 ### Demo page
 
+The demo works on Chrome 75, Firefox 67 and Safari 12.1.1
+
 ![Demo screenshot](docs/demo.png)
 
 To run the demo execute the server and navigate to `http://localhost:9000`. 
