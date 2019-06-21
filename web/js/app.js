@@ -1,5 +1,7 @@
 // We'll use React without JSX to avoid setting up Webpack and Babel.
- 
+// This is not supposed to be used as production code.
+
+// Helper function to create React elements
 const e = (el, props, children) => {
   if (props) {
     const { cls, ...rest } = props;
@@ -7,16 +9,6 @@ const e = (el, props, children) => {
   } else {
     return React.createElement(el, null, children);
   }
-}
-
-function ActionButton({ disabled, action, active }) {
-   return e('div', { cls: 'content' }, [
-     e('div', { 
-      cls: `button ${active ? 'is-danger' : 'is-success' }`, 
-      onClick: action, 
-      disabled
-    }, active ? 'Stop' : 'Start')
-   ]);
 }
 
 function startSession(offer) {
@@ -35,6 +27,22 @@ function startSession(offer) {
   });
 }
 
+// Handle different evt.data types according to the browser
+function decodeDataChannelPayload(data) {
+  if (data instanceof ArrayBuffer) {
+    const dec = new TextDecoder('utf-8');
+    return Promise.resolve(dec.decode(data));
+  } else if (data instanceof Blob) {
+    const reader = new FileReader();
+    const readPromise = new Promise((accept, reject) => {
+      reader.onload = () => accept(reader.result);
+      reader.onerror = reject;
+    });
+    reader.readAsText(data, 'utf-8');
+    return readPromise;
+  }
+}
+
 function setupPeerConnection({ stream, onResult, onSignaling, onStop }) {
   const pc = new RTCPeerConnection({
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -44,11 +52,11 @@ function setupPeerConnection({ stream, onResult, onSignaling, onStop }) {
     protocol: 'tcp'
   });
   resChan.onmessage = evt => {
-    // evt.data will be an instance of ArrayBuffer
-    const dec = new TextDecoder('utf-8');
-    const strData = dec.decode(evt.data)
-    const result = JSON.parse(strData);
-    onResult(result);
+    // evt.data will be an instance of ArrayBuffer OR Blob
+    decodeDataChannelPayload(evt.data).then(strData => {
+      const result = JSON.parse(strData);
+      onResult(result);
+    });
   };
 
   // We close everything when the data channel closes
@@ -86,6 +94,16 @@ function setupPeerConnection({ stream, onResult, onSignaling, onStop }) {
   return pc;
 }
 
+function ActionButton({ disabled, action, active }) {
+  return e('div', { cls: 'content' }, [
+    e('div', {
+      cls: `button ${active ? 'is-danger' : 'is-success'}`,
+      onClick: action,
+      disabled
+    }, active ? 'Stop' : 'Start')
+  ]);
+}
+
 function Results({ results }) {
   if (!results.length) {
     return e('p', { cls: 'has-text-centered' }, 'No results yet');
@@ -100,18 +118,8 @@ function Results({ results }) {
   );
 }
 
-const initialState = {
-  pc: null,
-  stream: null,
-  offer: null,
-  answer: null,
-  error: null,
-  results: [],
-  active: false
-};
-
 function AppContent() {
-  const [state, setState] = React.useState(initialState);
+  const [state, setState] = React.useState(AppContent.initialState);
 
   function start() {
     setState(st => ({ ...st, offer: null, answer: null, error: null }));
@@ -135,7 +143,7 @@ function AppContent() {
 
   function stop() {
     state.stream && state.stream.getAudioTracks().forEach(tr => tr.stop());
-    setState(st => ({ ...state, stream: null, active: false }));
+    setState(st => ({ ...st, stream: null, active: false }));
   }
 
   const action = state.active ? stop: start;
@@ -149,6 +157,16 @@ function AppContent() {
     e('pre', { cls: 'is-family-code' }, state.answer || '-'),
   ])
 }
+
+AppContent.initialState = {
+  pc: null,
+  stream: null,
+  offer: null,
+  answer: null,
+  error: null,
+  results: [],
+  active: false
+};
 
 function App() {
   return e('section', { cls: 'section'}, [
