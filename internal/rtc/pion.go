@@ -11,26 +11,29 @@ import (
 	"github.com/rviscarra/webrtc-speech-to-text/internal/transcribe"
 )
 
-// PionPeerConnection TODO
+// PionPeerConnection is a webrtc.PeerConnection wrapper that implements the
+// PeerConnection interface
 type PionPeerConnection struct {
 	pc *webrtc.PeerConnection
 }
 
-// PionRtcService TODO
+// PionRtcService is our implementation of the rtc.Service
 type PionRtcService struct {
 	stunServer  string
 	transcriber transcribe.Service
 }
 
-// NewPionService TODO
-func NewPionService(stun string, transcriber transcribe.Service) Service {
+// NewPionRtcService creates a new instances of PionRtcService
+func NewPionRtcService(stun string, transcriber transcribe.Service) Service {
 	return &PionRtcService{
 		stunServer:  stun,
 		transcriber: transcriber,
 	}
 }
 
-// ProcessOffer TODO
+// ProcessOffer handles the SDP offer coming from the client,
+// return the SDP answer that must be passed back to stablish the WebRTC
+// connection.
 func (p *PionPeerConnection) ProcessOffer(offer string) (string, error) {
 	err := p.pc.SetRemoteDescription(webrtc.SessionDescription{
 		SDP:  offer,
@@ -51,7 +54,7 @@ func (p *PionPeerConnection) ProcessOffer(offer string) (string, error) {
 	return answer.SDP, nil
 }
 
-// Close TODO
+// Close just closes the underlying peer connection
 func (p *PionPeerConnection) Close() error {
 	return p.pc.Close()
 }
@@ -128,7 +131,8 @@ func (pi *PionRtcService) handleAudioTrack(track *webrtc.Track, dc *webrtc.DataC
 	}
 }
 
-// CreatePeerConnection TODO
+// CreatePeerConnection creates and configures a new peer connection for
+// our purposes, receive one audio track and send data through one DataChannel
 func (pi *PionRtcService) CreatePeerConnection() (PeerConnection, error) {
 	pcconf := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{

@@ -11,19 +11,21 @@ import (
 	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
 )
 
-// GoogleTranscriber TODO
+// GoogleTranscriber is the implementation of the transcribe.Service,
+// hold a pointer to the Google Speech client
 type GoogleTranscriber struct {
 	speechClient *speech.Client
 	ctx          context.Context
 }
 
-// GoogleTrStream TODO
+// GoogleTrStream implements the transcribe.Stream interface,
+// it should map one to one with the audio stream coming from the client
 type GoogleTrStream struct {
 	stream  speechpb.Speech_StreamingRecognizeClient
 	results chan Result
 }
 
-// CreateStream TODO
+// CreateStream creates a new transcription stream
 func (t *GoogleTranscriber) CreateStream() (Stream, error) {
 	stream, err := t.speechClient.StreamingRecognize(t.ctx)
 	if err != nil {
@@ -52,12 +54,14 @@ func (t *GoogleTranscriber) CreateStream() (Stream, error) {
 	}, nil
 }
 
-// Results TODO
+// Results returns a channel that will receive the transcription
+// results when they're ready
 func (st *GoogleTrStream) Results() <-chan Result {
 	return st.results
 }
 
-// Close TODO
+// Close flushes the recognition stream and
+// pipes the results to the channel
 func (st *GoogleTrStream) Close() error {
 	if err := st.stream.CloseSend(); err != nil {
 		return err
@@ -73,6 +77,9 @@ func (st *GoogleTrStream) Close() error {
 	if resp.Error != nil {
 		return fmt.Errorf("(Code: %d) %s", resp.Error.GetCode(), resp.Error.GetMessage())
 	}
+
+	// This needs to be a Goroutine because our caller may read the results chan
+	// after calling this method.
 	go func() {
 		for _, result := range resp.GetResults() {
 			for _, alt := range result.GetAlternatives() {
@@ -100,7 +107,8 @@ func (st *GoogleTrStream) Write(buffer []byte) (int, error) {
 	return len(buffer), nil
 }
 
-// NewGoogleSpeech TODO
+// NewGoogleSpeech creates a new intances of the transcribe.Service that uses
+// Google Speech
 func NewGoogleSpeech(ctx context.Context, credentials string) (Service, error) {
 	speechClient, err := speech.NewClient(ctx, option.WithCredentialsFile(credentials))
 	if err != nil {

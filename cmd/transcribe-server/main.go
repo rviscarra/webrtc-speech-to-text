@@ -36,7 +36,7 @@ func main() {
 	tr, err := transcribe.NewGoogleSpeech(ctx, *speechCred)
 
 	var webrtc rtc.Service
-	webrtc = rtc.NewPionService(*stunServer, tr)
+	webrtc = rtc.NewPionRtcService(*stunServer, tr)
 	// webrtc = rtc.NewLoggingService(webrtc)
 
 	// Endpoint to create a new speech to text session
