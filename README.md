@@ -50,3 +50,7 @@ Say something and press the **Stop** button, the results (if any) should appear 
 ### Architecture
 
 ![Architecture and data flow](docs/architecture.png)
+
+### License
+
+MIT - see [LICENSE](LICENSE) for the full text.
