@@ -7,7 +7,7 @@ The speech to text server only depends on [Go 1.12](https://golang.org/doc/insta
 ### Disclaimer
 
 **This project is only a proof of concept and SHOULDN'T be deployed on a production 
-environment as it lacks even the most basic security measurements.**
+environment as it lacks even the most basic security measures.**
 
 ### Build the project
 
@@ -52,6 +52,12 @@ Say something and press the **Stop** button, the results (if any) should appear 
 ### Architecture
 
 ![Architecture and data flow](docs/architecture.png)
+
+### Coming soon
+
+- Unit tests.
+- Be able to specify the desired language.
+- Support for interim results.
 
 ### License
 
